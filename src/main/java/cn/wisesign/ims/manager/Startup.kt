@@ -29,7 +29,7 @@ class Startup :CommandProcessor(){
 	override fun exec(args:Array<String>){
 
         if(PROCESS_FILE.exists()){
-            println("系统已经启动，请先停止，在进行启动！")
+            println("系统已经启动，请先停止，再进行启动！")
             Thread.sleep(5000)
             return
         }

@@ -7,6 +7,7 @@ import cn.wisesign.ims.manager.Backup.Companion.remotePath
 import cn.wisesign.ims.manager.CommandProcessor.Companion.LOG_DATEFORMAT
 import cn.wisesign.ims.manager.CommandProcessor.Companion.imsHome
 import cn.wisesign.ims.manager.utils.Exceptions
+import cn.wisesign.ims.manager.utils.getShellType
 import cn.wisesign.ims.manager.utils.logger
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
@@ -18,7 +19,6 @@ import org.quartz.JobExecutionContext
 import org.quartz.TriggerBuilder.newTrigger
 import org.quartz.impl.StdSchedulerFactory
 import sun.management.ManagementFactory
-import java.io.File
 import java.util.*
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.taskdefs.Zip
@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat
 import org.apache.tools.ant.types.FileSet
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPReply
-import java.io.FileInputStream
+import java.io.*
 
 
 class Backup : CommandProcessor() {
@@ -104,7 +104,7 @@ class BackupJob : Job{
 
     override fun execute(p0: JobExecutionContext?) {
 
-        logger.info("the job start run at:${LOG_DATEFORMAT.format(Date())}")
+        logger.info("the job start run!!!")
         logger.info("param-localPath:$localPath")
         logger.info("param-remotePath:$remotePath")
         logger.info("param-cron:$cron")
@@ -113,6 +113,12 @@ class BackupJob : Job{
             File(localPath).mkdir()
         }
 
+        logger.info("shutdown system start!!!")
+        Runtime.getRuntime().exec("shutdown${getShellType()}")
+        Thread.sleep(10000)
+        logger.info("shutdown system end!!!")
+
+        logger.info("zip the system start!!!")
         val df = SimpleDateFormat("yyyyMMddHHmm")
         val zipFileName = "backup${df.format(Date())}.zip"
         val zipFile = File("$localPath/$zipFileName")
@@ -123,21 +129,34 @@ class BackupJob : Job{
         val fileSet = FileSet()
         fileSet.project = prj
         fileSet.dir = File(imsHome)
+        fileSet.appendExcludes(arrayOf(
+                "managerlogs/**",
+                "export/**",
+                "LuneneIndex/**",
+                "db/**",
+                "server-omm/**",
+                "server-report/**"
+        ))
         zip.addFileset(fileSet)
         try {
             zip.execute()
-
-            when{
-                remotePath.startsWith("\\\\") -> {
-                    FileUtils.copyFile(zipFile,File(remotePath))
+            Runtime.getRuntime().exec("cmd.exe /c start startup${getShellType()}")
+            logger.info("zip the system end!!!")
+            if(remotePath != ""){
+                logger.info("send the backup tp remote start!!!")
+                when{
+                    remotePath.startsWith("\\\\") -> {
+                        FileUtils.copyFile(zipFile,File(remotePath))
+                    }
+                    remotePath.startsWith("ftp") -> ftpCopy(zipFile)
+                    remotePath.startsWith("sftp") -> sftpCopy(zipFile)
                 }
-                remotePath.startsWith("ftp") -> ftpCopy(zipFile)
-                remotePath.startsWith("sftp") -> sftpCopy(zipFile)
+                logger.info("send the backup tp remote end!!!")
             }
-        }catch (e:Exception){
+        } catch (e:Exception){
             logger.error(e.message)
         }
-        logger.info("the job end at:${LOG_DATEFORMAT.format(Date())}")
+        logger.info("the job end!!!")
     }
 
     fun ftpCopy(srcFile:File){

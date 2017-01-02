@@ -24,7 +24,6 @@ class Shutdown :CommandProcessor() {
 		println("ims is stopped!will close after 5 secs.")
         PROCESS_FILE.delete()
 		Thread.sleep(5000)
-        exit(0)
 	}
 	
 	private fun execForWindows(excutablepath:String ){

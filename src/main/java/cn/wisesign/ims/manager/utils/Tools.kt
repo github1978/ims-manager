@@ -58,4 +58,12 @@ fun String.asPath():String{
 	}
 }
 
+fun getShellType():String{
+	when(Tools.getOsType()){
+		0 -> return ".bat"
+		0 -> return ".sh"
+		else -> return ""
+	}
+}
+
 val logger = LoggerFactory.getLogger(Tools::class.java)!!
