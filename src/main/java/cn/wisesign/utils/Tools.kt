@@ -1,8 +1,8 @@
 @file:Suppress("unused")
 
-package cn.wisesign.ims.manager.utils
+package cn.wisesign.utils
 
-import cn.wisesign.ims.manager.CommandProcessor
+import cn.wisesign.CommandProcessor
 import org.apache.commons.net.ftp.FTPClient
 import java.io.File
 import org.slf4j.LoggerFactory
@@ -14,7 +14,7 @@ class Tools {
 	companion object{
 		fun getSelfPath():String {
 			when(getOsType()){
-				1 -> return "/"+Tools::class.java.protectionDomain.codeSource.location.path.split("/ims-manager.jar")[0].substring(1)
+				1 -> return "/"+ Tools::class.java.protectionDomain.codeSource.location.path.split("/ims-manager.jar")[0].substring(1)
 				else -> return Tools::class.java.classLoader.getResource("").path
 			}
 		}
@@ -58,10 +58,10 @@ fun String.asPath():String{
 	}
 }
 
-fun getShellType():String{
+fun runShell(shellName:String):String{
 	when(Tools.getOsType()){
-		0 -> return ".bat"
-		0 -> return ".sh"
+		0 -> return "cmd.exe /c start $shellName.bat"
+		1 -> return "sh $shellName.sh"
 		else -> return ""
 	}
 }

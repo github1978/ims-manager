@@ -1,15 +1,15 @@
-package cn.wisesign.ims.manager
+package cn.wisesign
 
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.util.ArrayList
 
-import cn.wisesign.ims.manager.utils.Tools
+import cn.wisesign.utils.Tools
 import java.io.File
 import java.lang.System.exit
 
-class Shutdown :CommandProcessor() {
+class Shutdown : CommandProcessor() {
 
 	companion object{
 		var runfile = "ims.exe"
@@ -57,7 +57,7 @@ class Shutdown :CommandProcessor() {
 
 			}
 			br.close()
-		} catch (e:IOException ) {
+		} catch (e: IOException) {
 			e.printStackTrace()
 		}
 	}

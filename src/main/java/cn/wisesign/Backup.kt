@@ -1,14 +1,15 @@
-package cn.wisesign.ims.manager
+package cn.wisesign
 
-import cn.wisesign.ims.manager.Backup.Companion.cron
-import cn.wisesign.ims.manager.Backup.Companion.localPath
-import cn.wisesign.ims.manager.Backup.Companion.orignPath
-import cn.wisesign.ims.manager.Backup.Companion.remotePath
-import cn.wisesign.ims.manager.CommandProcessor.Companion.LOG_DATEFORMAT
-import cn.wisesign.ims.manager.CommandProcessor.Companion.imsHome
-import cn.wisesign.ims.manager.utils.Exceptions
-import cn.wisesign.ims.manager.utils.getShellType
-import cn.wisesign.ims.manager.utils.logger
+import cn.wisesign.Backup.Companion.cron
+import cn.wisesign.Backup.Companion.localPath
+import cn.wisesign.Backup.Companion.orignPath
+import cn.wisesign.Backup.Companion.remotePath
+import cn.wisesign.CommandProcessor.Companion.imsHome
+import cn.wisesign.utils.Exceptions
+import cn.wisesign.utils.logger
+import cn.wisesign.utils.runShell
+import cn.wisesign.utils.logger
+import cn.wisesign.utils.runShell
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import org.apache.commons.io.FileUtils
@@ -93,7 +94,7 @@ class Backup : CommandProcessor() {
     }
 }
 
-class BackupJob : Job{
+class BackupJob : Job {
 
     companion object{
         var host:String = ""
@@ -105,16 +106,16 @@ class BackupJob : Job{
     override fun execute(p0: JobExecutionContext?) {
 
         logger.info("the job start run!!!")
-        logger.info("param-localPath:$localPath")
-        logger.info("param-remotePath:$remotePath")
-        logger.info("param-cron:$cron")
+        logger.info("param-localPath:${localPath}")
+        logger.info("param-remotePath:${remotePath}")
+        logger.info("param-cron:${cron}")
 
         if(!File(localPath).exists()){
             File(localPath).mkdir()
         }
 
         logger.info("shutdown system start!!!")
-        Runtime.getRuntime().exec("shutdown${getShellType()}")
+        Runtime.getRuntime().exec(runShell("shutdown"))
         Thread.sleep(10000)
         logger.info("shutdown system end!!!")
 
@@ -140,16 +141,17 @@ class BackupJob : Job{
         zip.addFileset(fileSet)
         try {
             zip.execute()
-            Runtime.getRuntime().exec("cmd.exe /c start startup${getShellType()}")
+            Runtime.getRuntime().exec(runShell("startup"))
             logger.info("zip the system end!!!")
             if(remotePath != ""){
                 logger.info("send the backup tp remote start!!!")
                 when{
-                    remotePath.startsWith("\\\\") -> {
-                        FileUtils.copyFile(zipFile,File(remotePath))
+                    File(remotePath).exists() -> {
+                        FileUtils.copyFile(zipFile, File("remotePath$zipFileName"))
                     }
                     remotePath.startsWith("ftp") -> ftpCopy(zipFile)
                     remotePath.startsWith("sftp") -> sftpCopy(zipFile)
+                    else -> logger.error("the param-remotePath:'$remotePath' is wrong.")
                 }
                 logger.info("send the backup tp remote end!!!")
             }
@@ -159,9 +161,9 @@ class BackupJob : Job{
         logger.info("the job end!!!")
     }
 
-    fun ftpCopy(srcFile:File){
+    fun ftpCopy(srcFile: File){
         decodeFtpProtcol()
-        if(port==""){ port = "21" }
+        if(port ==""){ port = "21" }
         val ftp = FTPClient()
         ftp.connect(host,Integer.parseInt(port))
         ftp.login(user, passwd)
@@ -173,13 +175,13 @@ class BackupJob : Job{
         }
         ftp.makeDirectory(orignPath)
         val ins = FileInputStream(srcFile)
-        ftp.storeFile("$orignPath${srcFile.name}",ins)
+        ftp.storeFile("${orignPath}${srcFile.name}",ins)
         ins.close()
     }
 
-    fun sftpCopy(srcFile:File){
+    fun sftpCopy(srcFile: File){
         decodeFtpProtcol()
-        if(port==""){ port = "22" }
+        if(port ==""){ port = "22" }
         val jsch = JSch()
         val session = jsch.getSession(user, host, Integer.parseInt(port))
         session.setPassword(passwd)

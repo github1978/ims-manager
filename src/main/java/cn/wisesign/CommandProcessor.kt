@@ -1,6 +1,6 @@
-package cn.wisesign.ims.manager
+package cn.wisesign
 
-import cn.wisesign.ims.manager.utils.Tools
+import cn.wisesign.utils.Tools
 import java.io.File
 import java.text.SimpleDateFormat
 

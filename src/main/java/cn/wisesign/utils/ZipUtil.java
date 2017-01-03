@@ -1,4 +1,4 @@
-package cn.wisesign.ims.manager.utils;
+package cn.wisesign.utils;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -94,7 +94,7 @@
                             <transformers>
                                 <tranformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>cn.wisesign.ims.manager.Main</mainClass>
+                                    <mainClass>cn.wisesign.Main</mainClass>
                                     <manifestEntries>
                                         <Class-Path>.</Class-Path>
                                     </manifestEntries>

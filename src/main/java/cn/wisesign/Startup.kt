@@ -1,4 +1,4 @@
-package cn.wisesign.ims.manager
+package cn.wisesign
 
 import java.io.BufferedReader
 import java.io.File
@@ -6,10 +6,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.ArrayList
 
-import cn.wisesign.ims.manager.utils.Exceptions
-import cn.wisesign.ims.manager.utils.Tools
-import cn.wisesign.ims.manager.utils.asPath
-import cn.wisesign.ims.manager.utils.getMainAppDirectName
+import cn.wisesign.utils.Exceptions
+import cn.wisesign.utils.Tools
+import cn.wisesign.utils.asPath
+import cn.wisesign.utils.getMainAppDirectName
 import org.dom4j.Element
 import org.dom4j.io.SAXReader
 import java.io.File.separator
@@ -18,7 +18,7 @@ import java.io.InputStreamReader
 
 import java.lang.System.exit
 
-class Startup :CommandProcessor(){
+class Startup : CommandProcessor(){
 
 	companion object{
 		var mainAppName:String = ""
@@ -63,7 +63,7 @@ class Startup :CommandProcessor(){
 				continue
 			}
 			if(directName.split("server-").size>1 || directName.startsWith("db")){
-				callCommand(appPath,maxMemSpace)
+				callCommand(appPath, maxMemSpace)
 				Thread.sleep(1000)
                 println("start $directName at $appPath ......")
 			}
@@ -83,8 +83,8 @@ class Startup :CommandProcessor(){
 	private fun isSuccess(mainAppName:String):Boolean{
 		val xmlPath = "$imsHome/server-$mainAppName/conf/server.xml"
 		val nodes = SAXReader().read(File(xmlPath)).selectNodes("//Server/Service/Connector[@protocol='HTTP/1.1']")
-		val portEl:Element = nodes[0] as Element
-		val url:URL
+		val portEl: Element = nodes[0] as Element
+		val url: URL
 		try {
 			val targetUrl = "http://127.0.0.1:${portEl.attributeValue("port")}/${Tools.getMainAppDirectName(mainAppName)}"
             println("[Test Url]:"+targetUrl)
@@ -143,10 +143,10 @@ class Startup :CommandProcessor(){
                 val _tomcatHome = ( appPath + separator ).asPath()
 				cmd.add((imsHome +"jre/bin/ims").asPath())
                 cmd.add("-classpath")
-                cmd.add("$_tomcatHome$BOOTSTRAP_JAR")
+                cmd.add("$_tomcatHome${BOOTSTRAP_JAR}")
                 cmd.add("-Djava.util.logging.config.file=${appPath.asPath()}\\conf\\logging.properties")
                 cmd.add("-Xms512m")
-				if(appPath.contains(Startup.mainAppName)){
+				if(appPath.contains(mainAppName)){
 					cmd.add("-Xmx"+maxMemSpace+"m")
                 }else{
 					cmd.add("-Xmx512m")
@@ -207,7 +207,7 @@ class Startup :CommandProcessor(){
                 val br = BufferedReader(InputStreamReader(pb.start().inputStream))
                 br.forEachLine(::println)
 				br.close()
-            } catch (e:IOException) {
+            } catch (e: IOException) {
 				e.printStackTrace()
             }
 		}

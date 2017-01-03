@@ -1,6 +1,6 @@
-package cn.wisesign.ims.manager
+package cn.wisesign
 
-import cn.wisesign.ims.manager.utils.Exceptions
+import cn.wisesign.utils.Exceptions
 
 class DebugTest : CommandProcessor(){
 
