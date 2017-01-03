@@ -31,7 +31,7 @@ class Install : CommandProcessor() {
 
     override fun exec(args:Array<String>){
 
-        var list = args.asList().drop(1)
+        val list = args.asList().drop(1)
         list.map { it.split("=") }
                 .forEach {
                     if(it.size>1){
@@ -46,13 +46,13 @@ class Install : CommandProcessor() {
             throw Exception(Exceptions.INVAILD_PARAM)
         }
 
-        var system_config = Properties()
+        val system_config = Properties()
         REAL_SYSTEM_CONFIG_PATH = "${Tools.getMainAppDirectPath(mainAppName)}${SYSTEM_CONFIG_PATH}"
         println(REAL_SYSTEM_CONFIG_PATH)
         try {
-            var ins = FileInputStream(REAL_SYSTEM_CONFIG_PATH)
+            val ins = FileInputStream(REAL_SYSTEM_CONFIG_PATH)
             system_config.load(ins)
-            var out = FileOutputStream(REAL_SYSTEM_CONFIG_PATH)
+            val out = FileOutputStream(REAL_SYSTEM_CONFIG_PATH)
             system_config.put(DOC_LIBRARY_BASE_PATH, "${imsHome}${DOC_LIBRARY_DIRECTOR_NAME}")
             system_config.put(ATTACHMENT_ROOT_PATH, "${imsHome}${ATTACHMENT_DIRECTOR_NAME}")
             system_config.put(PROCESS_EXPORT_EXCEL_PATH, "${imsHome}${PROCESS_EXPORT_DIRECTOR_NAME}")

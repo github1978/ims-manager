@@ -8,8 +8,6 @@ import cn.wisesign.CommandProcessor.Companion.imsHome
 import cn.wisesign.utils.Exceptions
 import cn.wisesign.utils.logger
 import cn.wisesign.utils.runShell
-import cn.wisesign.utils.logger
-import cn.wisesign.utils.runShell
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import org.apache.commons.io.FileUtils
@@ -60,7 +58,7 @@ class Backup : CommandProcessor() {
                         throw Exception(Exceptions.INVAILD_PARAM)
                     }
                 }
-        if(action.equals("start") && localPath == ""){
+        if(action == "start" && localPath == ""){
             throw Exception(Exceptions.INVAILD_PARAM)
         }
 
