@@ -132,10 +132,7 @@ class BackupJob : Job {
         fileSet.appendExcludes(arrayOf(
                 "managerlogs/**",
                 "export/**",
-                "LuneneIndex/**",
-                "db/**",
-                "server-omm/**",
-                "server-report/**"
+                "LuneneIndex/**"
         ))
         zip.addFileset(fileSet)
         try {
