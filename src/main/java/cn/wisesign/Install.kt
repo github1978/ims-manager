@@ -46,25 +46,34 @@ class Install : CommandProcessor() {
             throw Exception(Exceptions.INVAILD_PARAM)
         }
 
+        applySystemConfigProperties()
+
+        println("Complete!!!")
+        Thread.sleep(1000)
+    }
+
+    fun copyJavaExeForIms(){
+
+    }
+
+    fun applySystemConfigProperties(){
         var system_config = Properties()
-        REAL_SYSTEM_CONFIG_PATH = "${Tools.getMainAppDirectPath(mainAppName)}${SYSTEM_CONFIG_PATH}"
+        REAL_SYSTEM_CONFIG_PATH = "${Tools.getMainAppDirectPath(mainAppName)}$SYSTEM_CONFIG_PATH"
         println(REAL_SYSTEM_CONFIG_PATH)
         try {
             var ins = FileInputStream(REAL_SYSTEM_CONFIG_PATH)
             system_config.load(ins)
             var out = FileOutputStream(REAL_SYSTEM_CONFIG_PATH)
-            system_config.put(DOC_LIBRARY_BASE_PATH, "${imsHome}${DOC_LIBRARY_DIRECTOR_NAME}")
-            system_config.put(ATTACHMENT_ROOT_PATH, "${imsHome}${ATTACHMENT_DIRECTOR_NAME}")
-            system_config.put(PROCESS_EXPORT_EXCEL_PATH, "${imsHome}${PROCESS_EXPORT_DIRECTOR_NAME}")
-            system_config.put(INDEX_PATH, "${imsHome}${INDEX_DIRECTOR_NAME}")
-            system_config.put(IMS_HOME, "${imsHome}${IMS_HOME_PATH}")
-            system_config.put(REPORT_EXEURL, "${imsHome}${REPORT_PATH}")
+            system_config.put(DOC_LIBRARY_BASE_PATH, "$imsHome$DOC_LIBRARY_DIRECTOR_NAME")
+            system_config.put(ATTACHMENT_ROOT_PATH, "$imsHome$ATTACHMENT_DIRECTOR_NAME")
+            system_config.put(PROCESS_EXPORT_EXCEL_PATH, "$imsHome$PROCESS_EXPORT_DIRECTOR_NAME")
+            system_config.put(INDEX_PATH, "$imsHome$INDEX_DIRECTOR_NAME")
+            system_config.put(IMS_HOME, "$imsHome$IMS_HOME_PATH")
+            system_config.put(REPORT_EXEURL, "$imsHome$REPORT_PATH")
             system_config.store(out, "")
         } catch (e: IOException) {
             println(e.message)
         }
-        println("Complete!!!")
-        Thread.sleep(1000)
     }
 
 }

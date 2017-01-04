@@ -2,7 +2,6 @@ package cn.wisesign;
 
 import cn.wisesign.utils.Exceptions;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 

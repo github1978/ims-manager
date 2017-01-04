@@ -8,8 +8,6 @@ import cn.wisesign.CommandProcessor.Companion.imsHome
 import cn.wisesign.utils.Exceptions
 import cn.wisesign.utils.logger
 import cn.wisesign.utils.runShell
-import cn.wisesign.utils.logger
-import cn.wisesign.utils.runShell
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import org.apache.commons.io.FileUtils
@@ -28,6 +26,7 @@ import org.apache.tools.ant.types.FileSet
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPReply
 import java.io.*
+import java.io.File.separator
 
 
 class Backup : CommandProcessor() {
@@ -60,7 +59,7 @@ class Backup : CommandProcessor() {
                         throw Exception(Exceptions.INVAILD_PARAM)
                     }
                 }
-        if(action.equals("start") && localPath == ""){
+        if(action == "start" && localPath == ""){
             throw Exception(Exceptions.INVAILD_PARAM)
         }
 
@@ -147,7 +146,7 @@ class BackupJob : Job {
                 logger.info("send the backup tp remote start!!!")
                 when{
                     File(remotePath).exists() -> {
-                        FileUtils.copyFile(zipFile, File("remotePath$zipFileName"))
+                        FileUtils.copyFile(zipFile, File("$remotePath$separator$zipFileName"))
                     }
                     remotePath.startsWith("ftp") -> ftpCopy(zipFile)
                     remotePath.startsWith("sftp") -> sftpCopy(zipFile)
