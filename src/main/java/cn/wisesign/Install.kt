@@ -3,6 +3,8 @@ package cn.wisesign
 import cn.wisesign.utils.Exceptions
 import cn.wisesign.utils.Tools
 import cn.wisesign.utils.getMainAppDirectPath
+import org.apache.commons.io.FileUtils
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
@@ -46,14 +48,19 @@ class Install : CommandProcessor() {
             throw Exception(Exceptions.INVAILD_PARAM)
         }
 
+        copyJavaExeForImsWindows()
         applySystemConfigProperties()
 
         println("Complete!!!")
         Thread.sleep(1000)
     }
 
-    fun copyJavaExeForIms(){
-
+    fun copyJavaExeForImsWindows(){
+        val imsexe = "${imsHome}jre/bin/ims.exe"
+        val javaexe = "${imsHome}jre/bin/java.exe"
+        if(!File(imsexe).exists()){
+            FileUtils.copyFile(File(javaexe),File(imsexe))
+        }
     }
 
     fun applySystemConfigProperties(){
