@@ -27,11 +27,11 @@ class Shutdown : CommandProcessor() {
 	}
 	
 	private fun execForWindows(excutablepath:String ){
-		var getIMSProcess=Runtime.getRuntime().exec("tasklist")
-		var imsbr = BufferedReader(InputStreamReader(getIMSProcess.inputStream))
+		val getIMSProcess=Runtime.getRuntime().exec("tasklist")
+		val imsbr = BufferedReader(InputStreamReader(getIMSProcess.inputStream))
 		imsbr.forEachLine {
 			if (it.startsWith(runfile)) {
-				var items = it.split(" ")
+				val items = it.split(" ")
 				for (item in items
 				) {
 					if(item != "" && item != runfile){
@@ -44,15 +44,15 @@ class Shutdown : CommandProcessor() {
 	}
 	
 	private fun execForLinux( myhome:String){
-		var cmd = ArrayList<String>()
+		val cmd = ArrayList<String>()
 		cmd.add("/bin/bash")
 		cmd.add("-c")
 		cmd.add("ps -ef|grep \"$myhome\"|grep PermSize|awk '{print $2}'|xargs kill -9")
-		var pb = ProcessBuilder(cmd)
+		val pb = ProcessBuilder(cmd)
 		pb.redirectErrorStream(true)
 		try {
-			var p = pb.start()
-			var br = BufferedReader(InputStreamReader(p.inputStream))
+			val p = pb.start()
+			val br = BufferedReader(InputStreamReader(p.inputStream))
 			br.forEachLine {
 
 			}

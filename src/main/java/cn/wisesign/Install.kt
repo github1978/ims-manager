@@ -31,7 +31,7 @@ class Install : CommandProcessor() {
 
     override fun exec(args:Array<String>){
 
-        var list = args.asList().drop(1)
+        val list = args.asList().drop(1)
         list.map { it.split("=") }
                 .forEach {
                     if(it.size>1){
@@ -61,7 +61,7 @@ class Install : CommandProcessor() {
         REAL_SYSTEM_CONFIG_PATH = "${Tools.getMainAppDirectPath(mainAppName)}$SYSTEM_CONFIG_PATH"
         println(REAL_SYSTEM_CONFIG_PATH)
         try {
-            var ins = FileInputStream(REAL_SYSTEM_CONFIG_PATH)
+            val ins = FileInputStream(REAL_SYSTEM_CONFIG_PATH)
             system_config.load(ins)
             var out = FileOutputStream(REAL_SYSTEM_CONFIG_PATH)
             system_config.put(DOC_LIBRARY_BASE_PATH, "$imsHome$DOC_LIBRARY_DIRECTOR_NAME")

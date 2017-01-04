@@ -199,10 +199,10 @@ class Startup : CommandProcessor(){
 			val cmd = ArrayList<String>()
             cmd.add("/bin/sh")
             cmd.add("-c")
-            cmd.add(appPath + "/bin/startup.sh")
+            cmd.add("$appPath/bin/startup.sh")
             val pb = ProcessBuilder(cmd)
             pb.redirectErrorStream(true)
-            pb.directory(File("$appPath${separator}bin"))
+            pb.directory(File("${appPath}bin"))
             try {
                 val br = BufferedReader(InputStreamReader(pb.start().inputStream))
                 br.forEachLine(::println)
