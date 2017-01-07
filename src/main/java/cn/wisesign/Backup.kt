@@ -11,6 +11,11 @@ import cn.wisesign.utils.*
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import org.apache.commons.io.FileUtils
+import org.apache.commons.net.ftp.FTPClient
+import org.apache.commons.net.ftp.FTPReply
+import org.apache.tools.ant.Project
+import org.apache.tools.ant.taskdefs.Zip
+import org.apache.tools.ant.types.FileSet
 import org.quartz.CronScheduleBuilder.cronSchedule
 import org.quartz.Job
 import org.quartz.JobBuilder.newJob
@@ -18,31 +23,26 @@ import org.quartz.JobExecutionContext
 import org.quartz.TriggerBuilder.newTrigger
 import org.quartz.impl.StdSchedulerFactory
 import sun.management.ManagementFactory
-import java.util.*
-import org.apache.tools.ant.Project
-import org.apache.tools.ant.taskdefs.Zip
-import java.text.SimpleDateFormat
-import org.apache.tools.ant.types.FileSet
-import org.apache.commons.net.ftp.FTPClient
-import org.apache.commons.net.ftp.FTPFile
-import org.apache.commons.net.ftp.FTPReply
-import java.io.*
+import java.io.File
 import java.io.File.separator
+import java.io.FileInputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class Backup : CommandProcessor() {
 
-    companion object{
-        var action:String = ""
-        var localPath:String = ""
+    companion object {
+        var action: String = ""
+        var localPath: String = ""
         // ftp:\\192.168.88.14:21@root@wisesign@/root/temp
         // sftp:\\192.168.88.14:22@root@wisesign@/root/temp
         // \\192.168.88.10\temp
-        var remotePath:String = ""
-        var orignPath:String = ""
-        var cron:String = ""
-        var storeNum:String = ""
-        val PREFIX:String = "backup"
+        var remotePath: String = ""
+        var orignPath: String = ""
+        var cron: String = ""
+        var storeNum: String = ""
+        val PREFIX: String = "backup"
     }
 
     override fun exec(args: Array<String>) {
@@ -50,42 +50,54 @@ class Backup : CommandProcessor() {
         val list = args.asList().drop(1)
         list.map { it.split("=") }
                 .forEach {
-                    if(it.size>1){
-                        when(it[0]){
+                    if (it.size > 1) {
+                        when (it[0]) {
                             "-action" -> action = it[1]
                             "-localPath" -> localPath = it[1]
                             "-remotePath" -> remotePath = it[1]
                             "-cron" -> cron = it[1]
                             "-storeNum" -> storeNum = it[1]
-                            else -> throw Exception(Exceptions.INVAILD_PARAM)
+                            else -> {
+                                logger.error(Exceptions.INVAILD_PARAM)
+                                return
+                            }
                         }
-                    }else{
-                        throw Exception(Exceptions.INVAILD_PARAM)
+                    } else {
+                        logger.error(Exceptions.INVAILD_PARAM)
+                        return
                     }
                 }
-        if(action == "start" && localPath == ""){
-            throw Exception(Exceptions.INVAILD_PARAM)
+        if (action == "start" && localPath == "") {
+            logger.error(Exceptions.INVAILD_PARAM)
+            return
         }
 
-        when(action){
+        when (action) {
             "start" -> buildAndStartBackupProcess()
             "stop" -> stopBackupProcess()
-            else -> throw Exception(Exceptions.INVAILD_PARAM)
+            else -> {
+                logger.error(Exceptions.INVAILD_PARAM)
+                return
+            }
         }
 
     }
 
-    fun stopBackupProcess(){
-        if(BACKUP_PROCESS_FILE.exists()){
-            Runtime.getRuntime().exec("taskkill /f /pid ${BACKUP_PROCESS_FILE.readText()}")
+    fun stopBackupProcess() {
+        if (BACKUP_PROCESS_FILE.exists()) {
+            when(Tools.getOsType()){
+                0 -> Runtime.getRuntime().exec("taskkill /f /pid ${BACKUP_PROCESS_FILE.readText()}")
+                1 -> Runtime.getRuntime().exec(arrayOf("/bin/sh","-c","kill -9 ${BACKUP_PROCESS_FILE.readText()}"))
+                else -> {
+                    logger.error("unsupport os!Cant stop backup_process!!")
+                    return
+                }
+            }
             BACKUP_PROCESS_FILE.delete()
         }
     }
 
-    fun buildAndStartBackupProcess(){
-
-        logger.info("the backup-process start]]]]]]]]]]]]]]]]]]]]]]]]]]")
-
+    fun buildAndStartBackupProcess() {
         val sf = StdSchedulerFactory()
         val sched = sf.scheduler
         val jobDetail = newJob(BackupJob::class.java).withIdentity("imsbackup", "cn.wisesign").build()
@@ -99,21 +111,22 @@ class Backup : CommandProcessor() {
 
 class BackupJob : Job {
 
-    companion object{
-        var host:String = ""
-        var port:String = ""
-        var user:String = ""
-        var passwd:String = ""
+    companion object {
+        var host: String = ""
+        var port: String = ""
+        var user: String = ""
+        var passwd: String = ""
     }
 
     override fun execute(p0: JobExecutionContext?) {
 
+        logger.info("the backup-process start]]]]]]]]]]]]]]]]]]]]]]]]]]")
         logger.info("the job start run!!!")
         logger.info("param-localPath:${localPath}")
         logger.info("param-remotePath:${remotePath}")
         logger.info("param-cron:${cron}")
 
-        if(!File(localPath).exists()){
+        if (!File(localPath).exists()) {
             File(localPath).mkdir()
         }
 
@@ -131,9 +144,9 @@ class BackupJob : Job {
             Runtime.getRuntime().exec(runShell("startup"))
             logger.info("setup system end!!!")
 
-            if(remotePath != ""){
+            if (remotePath != "") {
                 logger.info("send the backup tp remote start!!!")
-                when{
+                when {
                     File(remotePath).exists() -> windowsCopy(zipFile)
                     remotePath.startsWith("ftp") -> ftpCopy(zipFile)
                     remotePath.startsWith("sftp") -> sftpCopy(zipFile)
@@ -141,13 +154,13 @@ class BackupJob : Job {
                 }
                 logger.info("send the backup to remote end!!!")
             }
-        } catch (e:Exception){
+        } catch (e: Exception) {
             logger.error(e.message)
         }
         logger.info("the job end!!!")
     }
 
-    fun zipBackupFiles():File{
+    fun zipBackupFiles(): File {
         val df = SimpleDateFormat("yyyyMMddHHmm")
         val zipFileName = "backup${df.format(Date())}.zip"
         val zipFile = File("$localPath/$zipFileName")
@@ -161,60 +174,56 @@ class BackupJob : Job {
         fileSet.appendExcludes(arrayOf(
                 "managerlogs/**",
                 "export/**",
-                "LuneneIndex/**",
+                "LuneneIndex/**"
                 // --------------
-                "server-omm/**",
-                "db/**",
-                "server-report/**",
-                "updates/**"
+                //"server-omm/**",
+                //"db/**",
+                //"server-report/**",
+                //"updates/**"
         ))
         zip.addFileset(fileSet)
         zip.execute()
+        File(localPath).saveFileByStoreNum()
         return zipFile
     }
 
-    fun windowsCopy(srcFile: File){
-        FileUtils.copyFile(srcFile, File("$remotePath$separator${srcFile.name}"))
-        val targetDirector:File = File(remotePath)
-        if(storeNum != "" && targetDirector.list().size>Integer.parseInt(storeNum)){
-            var minbackup:Int = 0
-            targetDirector.list()
-                    .asSequence()
-                    .filterNot { File(it).isDirectory }
-                    .forEach {
-                        if(it == null){
-                            return
-                        }
-                        val thenum = Integer.parseInt(it.split(PREFIX)[1].split(".zip")[0])
-                        when{
-                            minbackup==0 -> minbackup = thenum
-                            minbackup>0 -> {
-                                if(minbackup<thenum)
-                                    minbackup = thenum
-                            }
-                        }
-                    }
-            File("$remotePath$separator$PREFIX$minbackup.zip").delete()
+    fun File.saveFileByStoreNum() {
+        if (storeNum != "") {
+            val remoteFiles = this.listFiles()
+                    .filterNot { it.isDirectory || !it.name.startsWith(PREFIX) }
+            remoteFiles
+                    .forEachIndexed { i, file ->
+                if (i < (remoteFiles.size - Integer.parseInt(storeNum))
+                        && file.name.contains(PREFIX)) {
+                    file.delete()
+                }
+            }
         }
     }
 
-    fun ftpCopy(srcFile: File){
+    fun windowsCopy(srcFile: File) {
+        FileUtils.copyFile(srcFile, File("$remotePath$separator${srcFile.name}"))
+        File(remotePath).saveFileByStoreNum()
+    }
+
+    fun ftpCopy(srcFile: File) {
         decodeFtpProtcol()
-        if(port ==""){ port = "21" }
-        var ftp = FTPClient()
-        ftp.connectTimeout = 1800000 //ftp连接超时 30 分钟
+        if (port == "") {
+            port = "21"
+        }
+        val ftp = FTPClient()
+//        ftp.connectTimeout = 1800000 //ftp连接超时 30 分钟
 
         // 尝试连接ftp服务器
-        ftp.connect(host,Integer.parseInt(port))
+        ftp.connect(host, Integer.parseInt(port))
         val reply = ftp.replyCode
-        if (!FTPReply.isPositiveCompletion(reply)){
+        if (!FTPReply.isPositiveCompletion(reply)) {
             ftp.disconnect()
             logger.error("连接远程ftp服务器时出错！$reply")
         }
 
         // 登录
-        ftp.setFileType(FTPClient.BINARY_FILE_TYPE)
-        if(!ftp.login(user, passwd)){
+        if (!ftp.login(user, passwd)) {
             ftp.disconnect()
             logger.error("登录ftp失败！检查用户名密码是否正确！")
         }
@@ -223,39 +232,29 @@ class BackupJob : Job {
         ftp.makeDirectory(orignPath)
         try {
             ftp.upload(srcFile)
-            if(storeNum != "" && ftp.listFiles(orignPath).size>Integer.parseInt(storeNum)) { // 删除旧备份
-                var minbackup:Int = 0
-                var orignFilelist = ftp.listFiles(orignPath).asList()
+            if (storeNum != "") { // 删除旧备份
+                val orignFilelist = ftp.listFiles(orignPath)
+                        .filterNot { it.isDirectory || !it.name.contains(PREFIX)}
                 orignFilelist
-                        .sortedBy { it.timestamp.timeInMillis }
-                        .filterNot { it.isDirectory }
-                        .forEach {
-                            if(it!=null){
-                                val thenum = Integer.parseInt(it.name.split(PREFIX)[1].split(".zip")[0])
-                                when{
-                                    minbackup == 0 -> minbackup = thenum
-                                    minbackup > 0 -> {
-                                        if(minbackup<thenum)
-                                            minbackup = thenum
-                                    }
-
-                                }
+                        .forEachIndexed { i, ftpFile ->
+                            if (i < (orignFilelist.size - Integer.parseInt(storeNum))) {
+                                ftp.remove("$orignPath/${ftpFile.name}")
                             }
                         }
-                ftp.remove("$orignPath/$PREFIX$minbackup.zip")
             }
-        }catch (e:Exception){
+        } catch (e: Exception) {
             logger.error(e.message)
-        }finally {
-            ftp.disconnect()
+        } finally {
             ftp.quit()
         }
 
     }
 
-    fun sftpCopy(srcFile: File){
+    fun sftpCopy(srcFile: File) {
         decodeFtpProtcol()
-        if(port ==""){ port = "22" }
+        if (port == "") {
+            port = "22"
+        }
         val jsch = JSch()
         val session = jsch.getSession(user, host, Integer.parseInt(port))
         session.setPassword(passwd)
@@ -267,16 +266,35 @@ class BackupJob : Job {
         val channel = session.openChannel("sftp")
         val sftp = channel as ChannelSftp
         sftp.connect()
-        sftp.put(srcFile.absolutePath, orignPath, ChannelSftp.OVERWRITE)
-        sftp.quit()
-        channel.disconnect()
-        session.disconnect()
+        try {
+            sftp.mkdir(orignPath)
+        }catch (e:Exception){ }
+
+        try {
+            sftp.put(srcFile.absolutePath, orignPath, ChannelSftp.OVERWRITE)
+            if(storeNum != "") {
+                val fileList = sftp.ls(orignPath).elements()
+                        .toList()
+                        .filter { (it as ChannelSftp.LsEntry).filename.contains(PREFIX) }
+                fileList.forEachIndexed { i, any ->
+                    val entry = any as ChannelSftp.LsEntry
+                    if (i < (fileList.size-Integer.parseInt(storeNum))){
+                        sftp.rm("$orignPath/${entry.filename}")
+                    }
+                }
+            }
+        }catch (e:Exception){
+            logger.error(e.message)
+        }finally {
+            channel.disconnect()
+            session.disconnect()
+        }
     }
 
     fun decodeFtpProtcol() {
         val url = remotePath.split("@")[0].split(":\\\\")[1].split(":")
         host = url[0]
-        if(url.size>1){
+        if (url.size > 1) {
             port = url[1]
         }
         val list = remotePath.split("@").drop(1)
@@ -284,5 +302,21 @@ class BackupJob : Job {
         passwd = list[1]
         orignPath = list[2]
     }
+
+    fun FTPClient.upload(srcFile:File){
+        this.setFileType(FTPClient.BINARY_FILE_TYPE)
+        val ins = FileInputStream(srcFile)
+        if (!this.storeFile("$orignPath${srcFile.name}",ins)){
+            throw Exception("ftp upload failed!")
+        }
+        ins.close()
+    }
+
+    fun FTPClient.remove(filePath:String){
+        if(!this.deleteFile(filePath)){
+            throw Exception("ftp delete file failed!")
+        }
+    }
+
 
 }

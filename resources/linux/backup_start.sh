@@ -1,0 +1,2 @@
+#`/home/work/NetNumen/jdk1.6.0_45/bin/java -Xdebug -Xrunjdwp:transport=dt_socket,address=9527,server=y,suspend=y -jar ims-manager.jar backup -action=start -localPath=/home/work/linuxtemp -remotePath=/home/work/selenium-node/temp -storeNum=2 -cron="0 */3 * * * ?"` &
+`/home/work/NetNumen/jdk1.6.0_45/bin/java -jar ims-manager.jar backup -action=start -localPath=/home/work/linuxtemp -remotePath=/home/work/selenium-node/temp -storeNum=2 -cron="0 */3 * * * ?"` &

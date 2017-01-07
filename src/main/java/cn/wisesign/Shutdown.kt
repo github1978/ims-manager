@@ -47,7 +47,7 @@ class Shutdown : CommandProcessor() {
 		val cmd = ArrayList<String>()
 		cmd.add("/bin/bash")
 		cmd.add("-c")
-		cmd.add("ps -ef|grep \"$myhome\"|grep PermSize|awk '{print $2}'|xargs kill -9")
+		cmd.add("ps -ef|grep \"$myhome\"|grep org.apache.catalina.startup.Bootstrap|awk '{print $2}'|xargs kill -9")
 		val pb = ProcessBuilder(cmd)
 		pb.redirectErrorStream(true)
 		try {

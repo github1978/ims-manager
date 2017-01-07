@@ -33,7 +33,6 @@ class Startup : CommandProcessor(){
             Thread.sleep(5000)
             return
         }
-
         val list = args.asList().drop(1)
         list.map { it.split("=") }
                 .forEach {
@@ -54,21 +53,17 @@ class Startup : CommandProcessor(){
 		}
 		
 		val myHomeDir = File(imsHome)
-
         println(myHomeDir.absolutePath)
 
-		for(directName in myHomeDir.list()){
-			val appPath = imsHome + directName
-			if (!File(appPath).isDirectory) {
-				continue
-			}
-			if(directName.split("server-").size>1 || directName.startsWith("db")){
-				callCommand(appPath, maxMemSpace)
-				Thread.sleep(1000)
-                println("start $directName at $appPath ......")
-			}
-		}
-		
+        myHomeDir.listFiles()
+                .filter { it.name.startsWith("server-") || it.name.startsWith("db") }
+                .filterNot { it.isFile }
+                .forEach {
+                    callCommand(it.path, maxMemSpace)
+                    Thread.sleep(1000)
+                    println("start ${it.name} at ${it.path} ......")
+                }
+
 		while(true){
 			if(isSuccess(mainAppName)){
                 println("Success!!!")
@@ -202,7 +197,8 @@ class Startup : CommandProcessor(){
             cmd.add("$appPath/bin/startup.sh")
             val pb = ProcessBuilder(cmd)
             pb.redirectErrorStream(true)
-            pb.directory(File("${appPath}bin"))
+            pb.directory(File("$appPath/bin"))
+            println(cmd)
             try {
                 val br = BufferedReader(InputStreamReader(pb.start().inputStream))
                 br.forEachLine(::println)

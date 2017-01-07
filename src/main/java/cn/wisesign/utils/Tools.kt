@@ -2,12 +2,9 @@
 
 package cn.wisesign.utils
 
-import cn.wisesign.Backup
 import cn.wisesign.CommandProcessor
-import org.apache.commons.net.ftp.FTPClient
 import java.io.File
 import org.slf4j.LoggerFactory
-import java.io.FileInputStream
 
 
 class Tools {
@@ -67,18 +64,5 @@ fun runShell(shellName:String):String{
 	}
 }
 
-fun FTPClient.upload(srcFile:File){
-	val ins = FileInputStream(srcFile)
-	if (!this.storeFile("${Backup.orignPath}${srcFile.name}",ins)){
-		throw Exception("ftp upload failed!")
-	}
-	ins.close()
-}
-
-fun FTPClient.remove(filePath:String){
-	if(!this.deleteFile(filePath)){
-		throw Exception("ftp delete file failed!")
-	}
-}
 
 val logger = LoggerFactory.getLogger(Tools::class.java)!!

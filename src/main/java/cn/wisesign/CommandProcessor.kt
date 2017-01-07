@@ -8,8 +8,8 @@ abstract class CommandProcessor {
 
     companion object{
         var imsHome:String = Tools.getSelfPath()
-        var PROCESS_FILE = File("${imsHome}PROCESS_SIGN")
-        var BACKUP_PROCESS_FILE = File("${imsHome}BACKUP_PROCESS_SIGN")
+        var PROCESS_FILE = File("$imsHome${File.separator}PROCESS_SIGN")
+        var BACKUP_PROCESS_FILE = File("$imsHome${File.separator}BACKUP_PROCESS_SIGN")
         var LOG_DATEFORMAT = SimpleDateFormat("yyyyMMddHHmmss.sss")
     }
 
