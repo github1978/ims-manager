@@ -2,6 +2,7 @@ package cn.wisesign
 
 import cn.wisesign.Backup.Companion.PREFIX
 import cn.wisesign.Backup.Companion.cron
+import cn.wisesign.Backup.Companion.exclude
 import cn.wisesign.Backup.Companion.localPath
 import cn.wisesign.Backup.Companion.orignPath
 import cn.wisesign.Backup.Companion.remotePath
@@ -43,6 +44,7 @@ class Backup : CommandProcessor() {
         var cron: String = ""
         var storeNum: String = ""
         val PREFIX: String = "backup"
+        var exclude:String = ""
     }
 
     override fun exec(args: Array<String>) {
@@ -57,6 +59,7 @@ class Backup : CommandProcessor() {
                             "-remotePath" -> remotePath = it[1]
                             "-cron" -> cron = it[1]
                             "-storeNum" -> storeNum = it[1]
+                            "-exclude" -> exclude = it[1]
                             else -> {
                                 logger.error(Exceptions.INVAILD_PARAM)
                                 return
@@ -122,9 +125,9 @@ class BackupJob : Job {
 
         logger.info("the backup-process start]]]]]]]]]]]]]]]]]]]]]]]]]]")
         logger.info("the job start run!!!")
-        logger.info("param-localPath:${localPath}")
-        logger.info("param-remotePath:${remotePath}")
-        logger.info("param-cron:${cron}")
+        logger.info("param-localPath:$localPath")
+        logger.info("param-remotePath:$remotePath")
+        logger.info("param-cron:$cron")
 
         if (!File(localPath).exists()) {
             File(localPath).mkdir()
@@ -168,10 +171,11 @@ class BackupJob : Job {
         val zip = Zip()
         zip.project = prj
         zip.destFile = zipFile
+
         val fileSet = FileSet()
         fileSet.project = prj
         fileSet.dir = File(imsHome)
-        fileSet.appendExcludes(arrayOf(
+        var excludeArray = arrayOf(
                 "managerlogs/**",
                 "export/**",
                 "LuneneIndex/**"
@@ -180,7 +184,11 @@ class BackupJob : Job {
                 //"db/**",
                 //"server-report/**",
                 //"updates/**"
-        ))
+        )
+        if(exclude!=""){
+            excludeArray = excludeArray.plus(exclude.split(","))
+        }
+        fileSet.appendExcludes(excludeArray)
         zip.addFileset(fileSet)
         zip.execute()
         File(localPath).saveFileByStoreNum()
