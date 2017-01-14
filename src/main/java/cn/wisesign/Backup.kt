@@ -24,11 +24,8 @@ import org.quartz.JobExecutionContext
 import org.quartz.TriggerBuilder.newTrigger
 import org.quartz.impl.StdSchedulerFactory
 import sun.management.ManagementFactory
-import java.io.BufferedReader
-import java.io.File
+import java.io.*
 import java.io.File.separator
-import java.io.FileInputStream
-import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -146,14 +143,15 @@ class BackupJob : Job {
         logger.info("shutdown system end!!!")
 
         try {
-            logger.info("zip the system start!!!")
-            val zipFile = zipBackupFiles()
-            logger.info("zip the system end!!!")
 
             var sqlbackupfile = ""
             if(dumpmysql!==""){
                 sqlbackupfile = mysqldump()
             }
+
+            logger.info("zip the system start!!!")
+            val zipFile = zipBackupFiles()
+            logger.info("zip the system end!!!")
 
             if (remotePath != "") {
                 logger.info("send the backup tp remote start!!!")
@@ -188,17 +186,16 @@ class BackupJob : Job {
         val passwd = params[1]
         val dbname = params[2]
         val sqlpath = "$imsHome${separator}sqlbackup.sql"
+
         logger.info("dump mysqldb start!!!")
-        val dumpproc = Runtime.getRuntime().exec("mysqldump -h $host -u $user -p $passwd $dbname>$sqlpath && echo backupdone")
+        val dumpproc = Runtime.getRuntime().exec("mysqldump -h$host -u$user -p$passwd --default-character-set=utf8 $dbname")
         val br = BufferedReader(InputStreamReader(dumpproc.inputStream))
-        while(!br.lineSequence().contains("backupdone")){
-            br.forEachLine {
-                if(it.contains("error")){
-                    logger.error(it)
-                    throw Exception("dump mysqldb failed!!$it")
-                }
-            }
+        var outOSW = OutputStreamWriter(FileOutputStream(File(sqlpath), true), "utf8")
+        br.lineSequence().forEach {
+            outOSW.write("$it\r\n")
+            outOSW.flush()
         }
+        outOSW.close()
         logger.info("dump mysqldb end!!!")
         return sqlpath
     }
