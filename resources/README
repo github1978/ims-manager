@@ -1,0 +1,35 @@
+自动备份命令详解
+
+本自动备份程序，
+   支持以cron表达式的方式设置定时后台运行。
+   支持windows和linux系统。
+   备份时不中断系统的使用。
+   只支持mysql和tomcat是安装包中自带的，即mysql和tomcat独立部署时，需要视情况才能进行自动备份。
+
+参数详解
+-action       两个选项start或者stop代表启动或者停止自动备份，若是start，则需要设置后续参数。若是stop则不需要任何参数
+-localPath    本机备份目录
+-include      指定需要备份的文件或者目录，若有多个文件或者目录需要备份，则以","号进行分隔。
+-exclude      指定在备份目标目录文件中需要排除的目录和文件，多个以","分隔，例如：排除attachment/2013/**文件夹。
+-dumpmysql    全量备份mysql数据库，需要提供账号、密码、数据名，以","号分隔，例如：-dumpmysql=root,root,ims3.2-ccfccb
+-storeNum     指定需要保留的备份数量，例如:-storNum=5,意义为保留最近的5次备份。
+-remotePath   指定异地备份方式，支持 共享目录拷贝、磁盘映射拷贝、ftp拷贝、sftp拷贝
+             例如：
+               共享目录拷贝：-remotePath=\\172.16.19.5\temp 备份到172.16.19.5的temp共享目录下
+               磁盘映射拷贝：-remotePath=Z:\\temp 这里Z盘是磁盘映射远程机器的磁盘目录
+               ftp拷贝:     -remotePath=ftp://192.168.234.130@work@work@/home/work/temp/ 其中work,work是ftp的账号和密码，最后是备份目录
+               sftp拷贝:    -remotePath=sftp://192.168.234.130@work@work@/home/work/temp/ 同ftp
+-cron         定时任务表达式，例如：-cron="0 43 23 * * ?"表示每天23点43分执行备份动作
+
+样例：
+1.每天23点进行本地备份，备份内容是数据库和附件，保留最近5天的备份
+windows:
+start jre/bin/javaw -jar ims-manager.jar backup -action=start -localPath=D:\temp -include=attachment -dumpmysql=root,root,ims3.2-ccfccb -storeNum=5 -cron="0 0 23 * * ?"
+linux:
+jre/bin/java -jar ims-manager.jar backup -action=start -localPath=/home/work/linuxtemp -include=attachment -dumpmysql=root,root,ims3.2-ccfccb -storeNum=5 -cron="0 0 23 * * ?" &
+
+2.每天23点进行本地、异地备份，备份内容是数据库和附件，保留最近5天备份
+windows:
+start jre/bin/javaw -jar ims-manager.jar backup -action=start -localPath=D:\temp -remotePath=\\172.16.19.5\temp -include=attachment -dumpmysql=root,root,ims3.2-ccfccb -storeNum=5 -cron="0 0 23 * * ?"
+linux:
+jre/bin/java -jar ims-manager.jar backup -action=start -localPath=/home/work/linuxtemp -remotePath=\\172.16.19.5\temp -include=attachment -dumpmysql=root,root,ims3.2-ccfccb -storeNum=5 -cron="0 0 23 * * ?" &
