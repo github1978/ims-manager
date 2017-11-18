@@ -6,19 +6,21 @@ import java.io.InputStreamReader
 import java.util.ArrayList
 
 import cn.wisesign.utils.Tools
+import cn.wisesign.utils.asPath
+import cn.wisesign.utils.sigarGetProcesslist
 import java.io.File
 import java.lang.System.exit
 
 class Shutdown : CommandProcessor() {
 
 	companion object{
-		var runfile = "ims.exe"
+		var runfile = arrayOf("ims.exe","java.exe")
 	}
 
 	override fun exec(args:Array<String>){
 		when(Tools.getOsType()){
-			0 -> execForWindows(imsHome)
-			1 -> execForLinux(imsHome)
+			0 -> execForWindows(imsHome.asPath())
+			1 -> execForLinux(imsHome.asPath())
 			else -> throw Exception("Unkown OS")
 		}
 		println("ims is stopped!will close after 5 secs.")
@@ -27,20 +29,15 @@ class Shutdown : CommandProcessor() {
 	}
 	
 	private fun execForWindows(excutablepath:String ){
-		val getIMSProcess=Runtime.getRuntime().exec("tasklist")
-		val imsbr = BufferedReader(InputStreamReader(getIMSProcess.inputStream))
-		imsbr.forEachLine {
-			if (it.startsWith(runfile)) {
-				val items = it.split(" ")
-				for (item in items
-				) {
-					if(item != "" && item != runfile){
-						Runtime.getRuntime().exec("taskkill /f /pid " + item)
-						break
-					}
-				}
-			}
-		}
+        val processList = Tools.sigarGetProcesslist()
+        processList.forEach {
+            val execpath = it["execpath"].toString()
+            val pname = it["pname"].toString()
+            val pid = it["pid"]
+            if(execpath.contains(excutablepath) && runfile.contains(pname)) {
+                Runtime.getRuntime().exec("taskkill /f /pid " + pid)
+            }
+        }
 	}
 	
 	private fun execForLinux( myhome:String){

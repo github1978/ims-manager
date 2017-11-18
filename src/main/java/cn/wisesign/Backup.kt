@@ -3,9 +3,11 @@ package cn.wisesign
 import cn.wisesign.Backup.Companion.PREFIX
 import cn.wisesign.Backup.Companion.dumpmysql
 import cn.wisesign.Backup.Companion.exclude
+import cn.wisesign.Backup.Companion.include
 import cn.wisesign.Backup.Companion.localPath
 import cn.wisesign.Backup.Companion.orignPath
 import cn.wisesign.Backup.Companion.remotePath
+import cn.wisesign.Backup.Companion.sqlFileName
 import cn.wisesign.Backup.Companion.storeNum
 import cn.wisesign.CommandProcessor.Companion.imsHome
 import cn.wisesign.utils.*
@@ -23,9 +25,9 @@ import org.quartz.JobBuilder.newJob
 import org.quartz.JobExecutionContext
 import org.quartz.TriggerBuilder.newTrigger
 import org.quartz.impl.StdSchedulerFactory
-import sun.management.ManagementFactory
 import java.io.*
 import java.io.File.separator
+import java.lang.management.ManagementFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -43,8 +45,10 @@ class Backup : CommandProcessor() {
         var cron: String = ""
         var storeNum: String = ""
         val PREFIX: String = "backup"
-        var exclude:String = ""
+        var include:String = ""
         var dumpmysql:String = ""
+        val sqlFileName = "sqlbackup.sql"
+        var exclude:String = ""
     }
 
     override fun exec(args: Array<String>) {
@@ -59,6 +63,7 @@ class Backup : CommandProcessor() {
                             "-remotePath" -> remotePath = it[1]
                             "-cron" -> cron = it[1]
                             "-storeNum" -> storeNum = it[1]
+                            "-include" -> include = it[1]
                             "-exclude" -> exclude = it[1]
                             "-dumpmysql" -> dumpmysql = it[1]
                             else -> {
@@ -108,7 +113,7 @@ class Backup : CommandProcessor() {
         logger.info("param-localPath:$localPath")
         logger.info("param-remotePath:$remotePath")
         logger.info("param-cron:$cron")
-        logger.info("param-exclude:$exclude")
+        logger.info("param-exclude:$include")
 
         val sf = StdSchedulerFactory()
         val sched = sf.scheduler
@@ -116,7 +121,9 @@ class Backup : CommandProcessor() {
         val trigger = newTrigger().withIdentity("imsbackupTrigger", "cn.wisesign")
                 .withSchedule(cronSchedule(cron)).build()
         sched.scheduleJob(jobDetail, trigger)
+        logger.info("job start begin!")
         sched.start()
+        logger.info("job start end!")
         BACKUP_PROCESS_FILE.writeText(ManagementFactory.getRuntimeMXBean().name.split("@")[0])
     }
 }
@@ -137,10 +144,10 @@ class BackupJob : Job {
             File(localPath).mkdir()
         }
 
-        logger.info("shutdown system start!!!")
-        Runtime.getRuntime().exec(runShell("shutdown"))
-        Thread.sleep(10000)
-        logger.info("shutdown system end!!!")
+//        logger.info("shutdown system start!!!")
+//        Runtime.getRuntime().exec(runShell("shutdown"))
+//        Thread.sleep(10000)
+//        logger.info("shutdown system end!!!")
 
         try {
 
@@ -159,7 +166,7 @@ class BackupJob : Job {
                     File(remotePath).exists() -> windowsCopy(zipFile)
                     remotePath.startsWith("ftp") -> ftpCopy(zipFile)
                     remotePath.startsWith("sftp") -> sftpCopy(zipFile)
-                    else -> logger.error("the param-remotePath:'$remotePath' is wrong.")
+                    else -> throw Exception("the param-remotePath:'$remotePath' is wrong.")
                 }
                 logger.info("send the backup to remote end!!!")
             }
@@ -172,9 +179,9 @@ class BackupJob : Job {
             logger.error(e.cause.toString())
             logger.error(e.stackTrace.joinToString(","))
         } finally {
-            logger.info("setup system start!!!")
-            Runtime.getRuntime().exec(runShell("startup"))
-            logger.info("setup system end!!!")
+//            logger.info("setup system start!!!")
+//            Runtime.getRuntime().exec(runShell("startup"))
+//            logger.info("setup system end!!!")
         }
         logger.info("the job end!!!")
     }
@@ -185,12 +192,13 @@ class BackupJob : Job {
         val user = params[0]
         val passwd = params[1]
         val dbname = params[2]
-        val sqlpath = "$imsHome${separator}sqlbackup.sql"
-
+        val sqlpath = "$imsHome$separator$sqlFileName"
         logger.info("dump mysqldb start!!!")
-        val dumpproc = Runtime.getRuntime().exec("mysqldump -h$host -u$user -p$passwd --default-character-set=utf8 $dbname")
-        val br = BufferedReader(InputStreamReader(dumpproc.inputStream))
-        var outOSW = OutputStreamWriter(FileOutputStream(File(sqlpath), true), "utf8")
+        val cmd = "$imsHome/db/bin/mysqldump -h$host -u$user -p$passwd --default-character-set=utf8 $dbname"
+        logger.info(cmd)
+        val dumpproc = Runtime.getRuntime().exec(cmd)
+        val br = BufferedReader(InputStreamReader(dumpproc.inputStream,"utf-8"))
+        val outOSW = OutputStreamWriter(FileOutputStream(File(sqlpath), true), "utf-8")
         br.lineSequence().forEach {
             outOSW.write("$it\r\n")
             outOSW.flush()
@@ -211,23 +219,29 @@ class BackupJob : Job {
 
         val fileSet = FileSet()
         fileSet.project = prj
-        fileSet.dir = File(imsHome)
-        var excludeArray = arrayOf(
-                "managerlogs/**",
-                "export/**",
-                "LuneneIndex/**"
-                // --------------
-                //"server-omm/**",
-                //"db/**",
-                //"server-report/**",
-                //"updates/**"
-        )
-        if(exclude!=""){
-            excludeArray = excludeArray.plus(exclude.split(","))
+        val homeDir = File(imsHome)
+        fileSet.dir = homeDir
+        val excludeList = ArrayList<String>()
+        val includeArray = include.split(",")
+        homeDir.listFiles().filter {
+            !includeArray.contains(it.name) && it.name != sqlFileName
+        }.forEach {
+            if(it.isDirectory){
+                excludeList.add("${it.name}/**")
+            }else{
+                excludeList.add(it.name)
+            }
         }
-        logger.info("exclude director:${excludeArray.joinToString(",")}")
-        fileSet.appendExcludes(excludeArray)
+        if(exclude!="") {
+            exclude.split(",").forEach {
+                excludeList.add(it)
+            }
+        }
+        logger.info("exclude director:${excludeList.joinToString(",")}")
+        fileSet.appendExcludes(excludeList.toTypedArray())
         zip.addFileset(fileSet)
+        zip.fallBackToUTF8 = true
+        zip.setUseLanguageEncodingFlag(true)
         zip.execute()
         File(localPath).saveFileByStoreNum()
         return zipFile
@@ -355,13 +369,14 @@ class BackupJob : Job {
         }
         val list = remotePath.split("@").drop(1)
         user = list[0]
-        passwd = list[1]
+        passwd = list[1].replace("*","@")
         orignPath = list[2]
     }
 
     fun FTPClient.upload(srcFile:File){
         this.setFileType(FTPClient.BINARY_FILE_TYPE)
         val ins = FileInputStream(srcFile)
+        logger.info("上传目标文件:$orignPath${srcFile.name}")
         if (!this.storeFile("$orignPath${srcFile.name}",ins)){
             throw Exception("ftp upload failed!")
         }

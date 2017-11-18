@@ -3,9 +3,21 @@
 package cn.wisesign.utils
 
 import cn.wisesign.CommandProcessor
+import org.hyperic.sigar.ProcCredName
+import org.hyperic.sigar.ProcExe
+import org.hyperic.sigar.Sigar
+import org.hyperic.sigar.SigarPermissionDeniedException
 import java.io.File
 import org.slf4j.LoggerFactory
+import java.util.*
+import java.util.ArrayList
+import java.util.Enumeration
+import java.util.Collections.enumeration
+import java.util.Collections
+import org.apache.tools.ant.util.CollectionUtils.putAll
 
+
+val logger = LoggerFactory.getLogger(Tools::class.java)!!
 
 class Tools {
 
@@ -35,6 +47,7 @@ fun Tools.Companion.getMainAppDirectName(mainAppName:String):String{
 			.forEach { return it }
 	return ""
 }
+
 fun Tools.Companion.getMainAppDirectPath(mainAppName:String):String{
 	val webapps = "${CommandProcessor.imsHome}/server-$mainAppName/webapps/"
 	File(webapps).list()
@@ -64,5 +77,36 @@ fun runShell(shellName:String):String{
 	}
 }
 
+fun Tools.Companion.sigarGetProcesslist():List<Map<String,Any>>{
+    initSigar()
+	val sigar = Sigar()
+    val result = ArrayList<Map<String,Any>>()
+	sigar.procList.forEach loop@{
+        try {
+            val processInfoMap = HashMap<String,Any>()
+            val processInfo = sigar.getProcExe(it)
+            processInfoMap.put("pid",it)
+            processInfoMap.put("execpath",processInfo.cwd)
+            val pnameStrArr = processInfo.name.split(File.separator)
+            processInfoMap.put("pname",pnameStrArr[pnameStrArr.size-1])
+            result.add(processInfoMap)
+        }catch (e: SigarPermissionDeniedException){
+            return@loop
+        }
+	}
+    return result
+}
 
-val logger = LoggerFactory.getLogger(Tools::class.java)!!
+fun Tools.Companion.initSigar(){
+    val envKey = "java.library.path"
+    var javalibpath = System.getProperty(envKey)
+    val selfpath = Tools.getSelfPath().asPath()
+    if(!javalibpath.contains(selfpath)){
+        if(Tools.getOsType()==0){
+            javalibpath += ";$selfpath\\lib"
+        }else{
+            javalibpath += ":$selfpath/lib"
+        }
+        System.setProperty(envKey,javalibpath)
+    }
+}
