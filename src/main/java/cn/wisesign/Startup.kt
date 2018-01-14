@@ -180,6 +180,7 @@ class Startup : CommandProcessor() {
                         logger.error("启动出错：$it")
                         br.close()
                         Shutdown().exec(arrayOf())
+                        exit(1)
                     }
                 }
                 br.close()
@@ -188,7 +189,7 @@ class Startup : CommandProcessor() {
             }
         }
 
-        //		private fun execForLinux(){
+//		private fun execForLinux(){
 //			val cmd = ArrayList<String>()
 //            cmd.add("/bin/sh")
 //            cmd.add("-c")

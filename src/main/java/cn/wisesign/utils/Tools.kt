@@ -3,18 +3,14 @@
 package cn.wisesign.utils
 
 import cn.wisesign.CommandProcessor
-import org.hyperic.sigar.ProcCredName
-import org.hyperic.sigar.ProcExe
+import org.apache.commons.io.filefilter.IOFileFilter
 import org.hyperic.sigar.Sigar
 import org.hyperic.sigar.SigarPermissionDeniedException
 import java.io.File
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.ArrayList
-import java.util.Enumeration
-import java.util.Collections.enumeration
-import java.util.Collections
-import org.apache.tools.ant.util.CollectionUtils.putAll
+import java.text.SimpleDateFormat
 
 
 val logger = LoggerFactory.getLogger(Tools::class.java)!!
@@ -69,6 +65,14 @@ fun String.asPath():String{
 	}
 }
 
+fun String.asArray():List<String>{
+	return if(this.contains(",")){
+		this.split(",")
+	}else{
+		ArrayList<String>()
+	}
+}
+
 fun runShell(shellName:String):String{
 	when(Tools.getOsType()){
 		0 -> return "cmd.exe /c start $shellName.bat"
@@ -109,4 +113,28 @@ fun Tools.Companion.initSigar(){
         }
         System.setProperty(envKey,javalibpath)
     }
+}
+
+fun Tools.Companion.getNowTimeSpecialStr():String{
+	return SimpleDateFormat("yyyyMMddHHmmss").format(Date())
+}
+
+class FileNameFilter(val fileNames:List<String>): IOFileFilter {
+	override fun accept(file: File): Boolean {
+		fileNames.forEach {
+			if(it == file.name){
+				return false
+			}
+		}
+		return true
+	}
+
+	override fun accept(dir: File?, name: String?): Boolean {
+        fileNames.forEach {
+            if(it == dir?.name) {
+                return false
+            }
+        }
+        return true
+	}
 }

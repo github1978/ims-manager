@@ -2,6 +2,7 @@ package cn.wisesign;
 
 import cn.wisesign.utils.Exceptions;
 import cn.wisesign.utils.Tools;
+import org.apache.tools.ant.taskdefs.Get;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,7 @@ class Main {
         commands.put("debug",DebugTest.class);
         commands.put("backup",Backup.class);
         commands.put("install",Install.class);
+        commands.put("package", GetPackage.class);
 
         if(args.length==0){
             System.out.println("第一个参数必须是：setup/shutdown/debug/backup 中的一种");
