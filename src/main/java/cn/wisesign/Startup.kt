@@ -20,6 +20,7 @@ class Startup : CommandProcessor() {
     companion object {
         var mainAppName: String = ""
         var maxMemSpace: String = ""
+        var memParam:String = "512"
         var BOOTSTRAP_JAR = "bin${separator}bootstrap.jar"
     }
 
@@ -39,6 +40,9 @@ class Startup : CommandProcessor() {
                         }
                         if (it[0] == "-maxMemSpace") {
                             maxMemSpace = it[1]
+                        }
+                        if (it[0] == "-memParam") {
+                            memParam = it[1]
                         }
                     } else {
                         throw Exception(Exceptions.INVAILD_PARAM)
@@ -137,15 +141,15 @@ class Startup : CommandProcessor() {
                 cmd.add("-classpath")
                 cmd.add("$_tomcatHome${BOOTSTRAP_JAR}")
                 cmd.add("-Djava.util.logging.config.file=${appPath.asPath()}\\conf\\logging.properties")
-                cmd.add("-Xms512m")
+                cmd.add("-Xms${memParam}m")
                 if (appPath.contains(mainAppName)) {
                     cmd.add("-Xmx" + maxMemSpace + "m")
                 } else {
                     cmd.add("-Xmx512m")
                 }
-                cmd.add("-XX:PermSize=256M")
-                cmd.add("-XX:MaxNewSize=512m")
-                cmd.add("-XX:MaxPermSize=512m")
+                cmd.add("-XX:PermSize=${memParam}m")
+                cmd.add("-XX:MaxNewSize=${memParam}m")
+                cmd.add("-XX:MaxPermSize=${memParam}m")
                 cmd.add("-Xss256K")
                 cmd.add("-XX:+DisableExplicitGC")
                 cmd.add("-XX:SurvivorRatio=1")
@@ -218,15 +222,15 @@ class Startup : CommandProcessor() {
                 cmd.add("-classpath")
                 cmd.add("$_tomcatHome${BOOTSTRAP_JAR}")
                 cmd.add("-Djava.util.logging.config.file=${appPath.asPath()}/conf/logging.properties")
-                cmd.add("-Xms512m")
+                cmd.add("-Xms${memParam}m")
                 if (appPath.contains(mainAppName)) {
                     cmd.add("-Xmx" + maxMemSpace + "m")
                 } else {
                     cmd.add("-Xmx512m")
                 }
-                cmd.add("-XX:PermSize=256M")
-                cmd.add("-XX:MaxNewSize=512m")
-                cmd.add("-XX:MaxPermSize=512m")
+                cmd.add("-XX:PermSize=${memParam}M")
+                cmd.add("-XX:MaxNewSize=${memParam}m")
+                cmd.add("-XX:MaxPermSize=${memParam}m")
                 cmd.add("-Xss256K")
                 cmd.add("-XX:+DisableExplicitGC")
                 cmd.add("-XX:SurvivorRatio=1")
