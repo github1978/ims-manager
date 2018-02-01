@@ -183,7 +183,6 @@ class Startup : CommandProcessor() {
                     if (it.contains("error") || it.contains("Error") || it.contains("ERROR")) {
                         logger.error("启动出错：$it")
                         br.close()
-                        Shutdown().exec(arrayOf())
                         exit(1)
                     }
                 }

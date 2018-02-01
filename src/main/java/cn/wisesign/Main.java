@@ -19,6 +19,7 @@ class Main {
         commands.put("backup",Backup.class);
         commands.put("install",Install.class);
         commands.put("package", GetPackage.class);
+        commands.put("mergeSqlFiles", MergeSqlFiles.class);
 
         if(args.length==0){
             System.out.println("第一个参数必须是：setup/shutdown/debug/backup 中的一种");
